@@ -97,21 +97,5 @@ namespace UdemyClone.Services
                 .ToListAsync();
         }
 
-
-        public async Task<bool> CategoryExistsAsync(Guid categoryId)
-        {
-            if (categoryId == Guid.Empty)
-                throw new ArgumentException("Category ID cannot be an empty GUID.", nameof(categoryId));
-
-            return await context.Categories
-                .AnyAsync(c => c.Id == categoryId);
-        }
-
-        public async Task<int> GetCategoryCountAsync()
-        {
-            return await context.Categories
-                .CountAsync();
-        }
-
     }
 }

@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using OpenQA.Selenium;
 using System.Security.Claims;
 using UdemyClone.Dto;
-using UdemyClone.Services;
 using UdemyClone.Services.IServices;
 
 namespace UdemyClone.Controllers

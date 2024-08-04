@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using UdemyClone.Entities;
 using UdemyClone.Models;
 using UdemyClone.Services.IServices;
 
@@ -22,65 +21,60 @@ namespace UdemyClone.Controllers
         [Authorize(Roles = "Instructor")]
         public async Task<IActionResult> CreateCourse([FromBody] CourseModel model)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            var instructorId = GetIdFromToken();
 
             try
             {
-
-                var instructorId = GetIdFromToken();
-
-                var course = new Course
-                {
-                    Name = model.Name,
-                    Description = model.Description,
-                    InstructorId = instructorId,
-                    TopicId = model.TopicId
-                };
-
-                var createdCourse = await instructorService.CreateCourseAsync(course);
-
-                return CreatedAtAction(nameof(GetCourseById), new { id = createdCourse.Id }, createdCourse);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(ex.Message);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(ex.Message);
+                var courseDto = await instructorService.CreateCourseAsync(model, instructorId);
+                return CreatedAtAction(nameof(GetCourseById), new { id = courseDto.Id }, courseDto);
             }
             catch (ArgumentException ex)
             {
                 return BadRequest(ex.Message);
             }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                return StatusCode(500, "Internal server error. Please try again later.");
             }
         }
 
         [HttpPut("Update-Course")]
         [Authorize(Roles = "Instructor")]
-        public async Task<IActionResult> UpdateCourse([FromBody] CourseModel model)
+        public async Task<IActionResult> UpdateCourse(Guid CourseId, [FromBody] CourseModel model)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
             var instructorId = GetIdFromToken();
 
-            var updatedCourse = await instructorService.UpdateCourseAsync(model, instructorId);
-
-            if (updatedCourse == null)
+            try
             {
-                return NotFound("Course not found or you do not have permission to update this course.");
-            }
+                var updatedCourse = await instructorService.UpdateCourseAsync(CourseId, model, instructorId);
 
-            return Ok(updatedCourse);
+                if (updatedCourse == null)
+                {
+                    return NotFound("Course not found or you are not authorized to update this course.");
+                }
+
+                return Ok(updatedCourse);
+            }
+            catch(ArgumentNullException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
         }
 
         [HttpGet("Get-My-Courses-Instructor")]
@@ -89,12 +83,20 @@ namespace UdemyClone.Controllers
         {
             var instructorId = GetIdFromToken();
 
-            var courses = await instructorService.GetCoursesByInstructorAsync(instructorId);
+            try
+            {
+                var courses = await instructorService.GetCoursesByInstructorAsync(instructorId);
 
-            if (courses == null || !courses.Any())
-                return NotFound("No courses found for this instructor.");
+                if (courses == null || !courses.Any())
+                    return NotFound("No courses found for the given instructor.");
+                
 
-            return Ok(courses);
+                return Ok(courses);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Internal server error. Please try again later.");
+            }
         }
 
         [HttpGet("My-Courses-Enrollments")]
@@ -103,37 +105,54 @@ namespace UdemyClone.Controllers
         {
             var instructorId = GetIdFromToken();
 
-            if (instructorId == Guid.Empty)
+            try
             {
-                return Unauthorized("Instructor ID not found.");
+                var enrollments = await instructorService.GetInstructorCoursesEnrollmentsAsync(instructorId);
+
+                if (enrollments == null || !enrollments.Any())
+                {
+                    return NotFound("No enrollments found for the given instructor.");
+                }
+
+                return Ok(enrollments);
             }
-
-            var enrollments = await instructorService.GetInstructorCoursesEnrollmentsAsync(instructorId);
-
-            if (enrollments == null || !enrollments.Any())
+            catch (ArgumentException ex)
             {
-                return NotFound("No enrollments found for your courses.");
-            }
 
-            return Ok(enrollments);
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+
+                return StatusCode(500, "Internal server error. Please try again later.");
+            }
         }
 
         [HttpGet("Get-All-Courses")]
         public async Task<IActionResult> GetAllCourses([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
-            var (courses, totalPages) = await instructorService.GetAllCoursesAsync(pageNumber, pageSize);
-
-            if (courses.Any())
+            try
             {
-                return Ok(new
-                {
-                    PageIndex = pageNumber,
-                    TotalPages = totalPages,
-                    Courses = courses
-                });
-            }
+                var (courses, totalPages) = await instructorService.GetAllCoursesAsync(pageNumber, pageSize);
 
-            return NotFound("No courses found.");
+                var response = new
+                {
+                    TotalPages = totalPages,
+                    CurrentPage = pageNumber,
+                    PageSize = pageSize,
+                    Courses = courses
+                };
+
+                return Ok(response);
+            }
+            catch (ArgumentOutOfRangeException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Internal server error. Please try again later.");
+            }
         }
 
         [HttpGet("Get-Course-By-Id")]
@@ -153,19 +172,28 @@ namespace UdemyClone.Controllers
 
         [HttpDelete("Delete-Course")]
         [Authorize(Roles = "Instructor")]
-        public async Task<IActionResult> DeleteCourse(Guid id)
+        public async Task<IActionResult> DeleteCourse(Guid courseId)
         {
-            if (id == Guid.Empty)
-                return BadRequest("Course ID cannot be empty.");
-
             var instructorId = GetIdFromToken();
 
-            var result = await instructorService.DeleteCourseAsync(id, instructorId);
+            try
+            {
+                var result = await instructorService.DeleteCourseAsync(courseId, instructorId);
+                if (!result)
+                {
+                    return NotFound("Course not found or does not belong to the instructor.");
+                }
 
-            if (!result)
-                return NotFound("Course not found or not created by this instructor.");
-
-            return NoContent();
+                return NoContent();
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
         }
 
         private Guid GetIdFromToken()

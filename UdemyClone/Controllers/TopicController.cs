@@ -120,21 +120,6 @@ namespace UdemyClone.Controllers
             }
         }
 
-        [HttpGet("Get-Topic-Count")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> GetTopicCount()
-        {
-            try
-            {
-                var count = await topicService.GetTopicCountAsync();
-                return Ok(count);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ex.Message);
-            }
-        }
-
         [HttpDelete("Delete-Topic")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteTopic(Guid id)

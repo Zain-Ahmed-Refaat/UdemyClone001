@@ -121,21 +121,6 @@ namespace UdemyClone.Controllers
             }
         }
 
-        [HttpGet("Get-SubCategory-Count")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> GetSubCategoryCount()
-        {
-            try
-            {
-                var count = await subCategoryService.GetSubCategoryCountAsync();
-                return Ok(count);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ex.Message);
-            }
-        }
-
         [HttpDelete("Delete-SubCategory")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteSubCategory(Guid id)

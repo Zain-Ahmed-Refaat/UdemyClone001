@@ -100,15 +100,5 @@ namespace UdemyClone.Services
                 .ToListAsync();
         }
 
-
-        public async Task<bool> TopicExistsAsync(Guid id)
-        {
-            return await context.Topics.AnyAsync(t => t.Id == id);
-        }
-
-        public async Task<int> GetTopicCountAsync()
-        {
-            return await context.Topics.CountAsync();
-        }
     }
 }

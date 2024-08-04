@@ -89,24 +89,6 @@ namespace UdemyClone.Controllers
             }
         }
 
-        [HttpGet("Category-Exists")]
-        public async Task<IActionResult> CategoryExists(Guid id)
-        {
-            if (id == Guid.Empty)
-                return BadRequest("Invalid category ID.");
-
-            var exists = await categoryService.CategoryExistsAsync(id);
-            return Ok(new { Exists = exists });
-        }
-
-        [HttpGet("Get-Category-Count")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> GetCategoryCount()
-        {
-            var count = await categoryService.GetCategoryCountAsync();
-            return Ok(new { Count = count });
-        }
-
         [HttpDelete("Delete-Category")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteCategory(Guid categoryId)

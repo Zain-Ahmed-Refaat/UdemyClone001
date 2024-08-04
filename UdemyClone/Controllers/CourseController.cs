@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using UdemyClone.Dto;
+using UdemyClone.Models;
 using UdemyClone.Services.IServices;
 
 namespace UdemyClone.Controllers
@@ -19,23 +20,25 @@ namespace UdemyClone.Controllers
 
         [HttpPost("Upload-Lesson")]
         [Authorize(Roles = "Instructor")]
-        public async Task<IActionResult> UploadLesson([FromBody] LessonDto model)
+        public async Task<IActionResult> UploadLessonAsync([FromBody] LessonModel model)
         {
-
+            if (model == null)         
+                return BadRequest("Lesson model cannot be null.");
+            
             var instructorId = GetIdFromToken();
 
             try
             {
-                var lesson = await courseService.UploadLessonAsync(model, instructorId);
-                return CreatedAtAction(nameof(GetLessonById), new { id = lesson.Id }, lesson);
-            }
-            catch (ArgumentNullException ex)
-            {
-                return BadRequest(ex.Message);
+                var lessonDto = await courseService.UploadLessonAsync(model, instructorId);
+                return CreatedAtAction(nameof(GetLessonById), new { id = lessonDto.LessonId }, lessonDto);
             }
             catch (ArgumentException ex)
             {
                 return BadRequest(ex.Message);
+            }
+            catch (UnauthorizedAccessException ex)
+            { 
+                return Forbid();
             }
             catch (InvalidOperationException ex)
             {
@@ -43,24 +46,25 @@ namespace UdemyClone.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred.");
             }
         }
 
+
         [HttpGet("Get-All-Lessons")]
         [Authorize(Roles = "Instructor")]
-        public async Task<IActionResult> GetAllLessons(Guid courseId ,[FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetAllLessonsAsync(Guid courseId, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
-            var instructorId = GetIdFromToken();
-
             try
             {
+                var instructorId = GetIdFromToken();
+
                 var lessons = await courseService.GetAllLessonsAsync(instructorId, courseId, pageNumber, pageSize);
                 return Ok(lessons);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                return BadRequest(ex.Message);
             }
         }
 

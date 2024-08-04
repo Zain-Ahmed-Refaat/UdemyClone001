@@ -10,8 +10,6 @@ namespace UdemyClone.Services.IServices
         Task<IEnumerable<Topic>> SearchTopicsAsync(string searchTerm);
         Task<Topic> UpdateTopicAsync(UpdateTopicDto updateTopicDto);
         Task<Topic> GetTopicByIdAsync(Guid id);
-        Task<bool> TopicExistsAsync(Guid id);
         Task<bool> DeleteTopicAsync(Guid id);
-        Task<int> GetTopicCountAsync();
     }
 }

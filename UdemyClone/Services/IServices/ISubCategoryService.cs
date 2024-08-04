@@ -10,8 +10,6 @@ namespace UdemyClone.Services.IServices
         Task<SubCategory> CreateSubCategoryAsync(string name, Guid categoryId);
         Task<SubCategory> UpdateSubCategoryAsync(SubCategoryUpdateDto updateDto);
         Task<SubCategory> GetSubCategoryByIdAsync(Guid id);
-        Task<bool> SubCategoryExistsAsync(Guid id);
         Task<bool> DeleteSubCategoryAsync(Guid id);
-        Task<int> GetSubCategoryCountAsync();
     }
 }
