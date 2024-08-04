@@ -12,10 +12,10 @@ namespace UdemyClone.Services.IServices
         Task<bool> CanStudentRetakeQuizAsync(Guid quizId, Guid studentId);
         Task<bool> HasStudentTakenQuizAsync(Guid studentId, Guid quizId);
         Task<bool> DidStudentPassQuizAsync(Guid studentId, Guid quizId);
+        Task CreateQuizAsync(CreateQuizRequest request, Guid LessonId);
         Task<List<QuizResultDto>> GetQuizResultsByIdAsync(Guid quizId);
         Task<QuizDto> GetQuizByIdAsync(Guid quizId, Guid StudentId);
         Task<Guid> GetQuizIdByLessonIdAsync(Guid lessonId);
-        Task CreateQuizAsync(CreateQuizRequest request);
         Task DeleteQuizAsync(Guid quizId);
     }
 }

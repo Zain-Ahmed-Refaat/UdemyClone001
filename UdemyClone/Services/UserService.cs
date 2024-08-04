@@ -127,43 +127,40 @@ namespace UdemyClone.Services
             return Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$");
         }
 
-
         private async Task<JwtSecurityToken> GenerateJwtToken(User user)
-             {
-                 var userClaims = await userManager.GetClaimsAsync(user);
-                 var roles = await userManager.GetRolesAsync(user);
-                 var roleClaims = roles.Select(role => new Claim(ClaimTypes.Role, role)).ToList();
+        {
+            var userClaims = await userManager.GetClaimsAsync(user);
+            var roles = await userManager.GetRolesAsync(user);
+            var roleClaims = roles.Select(role => new Claim(ClaimTypes.Role, role)).ToList();
 
-                 var key = configuration["JWT:Key"];
-                 var issuer = configuration["JWT:Issuer"];
-                 var audience = configuration["JWT:Audience"];
+            var key = configuration["JWT:Key"];
+            var issuer = configuration["JWT:Issuer"];
+            var audience = configuration["JWT:Audience"];
 
-                 var claims = new List<Claim>
-                     {
-                         new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
-                         new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                         new Claim(JwtRegisteredClaimNames.Email, user.Email),
-                         new Claim("UserID", user.Id.ToString()),
-                         new Claim(ClaimTypes.Name, user.UserName)
-                     };
+            var claims = new List<Claim>
+                {
+                    new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
+                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                    new Claim(JwtRegisteredClaimNames.Email, user.Email),
+                    new Claim("UserID", user.Id.ToString()),
+                    new Claim(ClaimTypes.Name, user.UserName)
+                };
 
-                 claims.AddRange(userClaims);
-                 claims.AddRange(roleClaims);
+            claims.AddRange(userClaims);
+            claims.AddRange(roleClaims);
 
-                 var symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
-                 var signingCredentials = new SigningCredentials(symmetricSecurityKey, SecurityAlgorithms.HmacSha256);
+            var symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
+            var signingCredentials = new SigningCredentials(symmetricSecurityKey, SecurityAlgorithms.HmacSha256);
 
-                 var jwtSecurityToken = new JwtSecurityToken(
-                     issuer: issuer,
-                     audience: audience,
-                     claims: claims,
-                     expires: DateTime.UtcNow.AddDays(30),
-                     signingCredentials: signingCredentials);
+            var jwtSecurityToken = new JwtSecurityToken(
+                issuer: issuer,
+                audience: audience,
+                claims: claims,
+                expires: DateTime.UtcNow.AddDays(30),
+                signingCredentials: signingCredentials);
 
-                 return jwtSecurityToken;
-             }
-
-
+            return jwtSecurityToken;
+        }
 
         public async Task<UserManagerResponse> LoginUserAsync(LoginModel model)
         {
@@ -234,8 +231,6 @@ namespace UdemyClone.Services
 
             return userResponse;
         }
-
-
 
         public async Task<string> AddRoleAsync(AddRoleModel model)
         {

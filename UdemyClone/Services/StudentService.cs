@@ -69,7 +69,6 @@ namespace UdemyClone.Services
             };
         }
 
-
         public async Task<LessonDto> GetLessonAsync(Guid studentId, Guid lessonId)
         {
             var lesson = await context.Lessons
@@ -146,7 +145,6 @@ namespace UdemyClone.Services
             });
         }
 
-
         public async Task<IEnumerable<StudentDto>> GetAllStudentsAsync(int pageNumber, int pageSize)
         {
             if (pageNumber < 1) pageNumber = 1;
@@ -186,7 +184,6 @@ namespace UdemyClone.Services
             .Take(pageSize)
             .ToListAsync();
         }
-
 
         public async Task EnrollCourseAsync(Guid courseId, Guid userId)
         {

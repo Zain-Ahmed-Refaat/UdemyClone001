@@ -16,14 +16,17 @@ namespace UdemyClone.Services
 
         public async Task<StudentQuiz> GetLatestStudentQuizAttemptAsync(Guid studentId, Guid quizId)
         {
-            return await _context.StudentQuizzes
+            var attempt = await _context.StudentQuizzes
                 .Include(sq => sq.Student)
                 .Include(sq => sq.Quiz)
                 .Where(sq => sq.StudentId == studentId && sq.QuizId == quizId)
                 .OrderByDescending(sq => sq.DateTaken)
                 .FirstOrDefaultAsync();
-        }
 
+            Console.WriteLine($"Latest Attempt: {attempt?.Id}, Passed: {attempt?.Passed}");
+
+            return attempt;
+        }
 
         public async Task AddAsync(Quiz quiz)
         {
@@ -65,6 +68,15 @@ namespace UdemyClone.Services
             await _context.SaveChangesAsync();
         }
 
+        public async Task<Quiz> GetQuizzesByLessonIdAsync(Guid lessonId)
+        {
+            if (lessonId == Guid.Empty)
+                throw new ArgumentException("Lesson ID cannot be empty.", nameof(lessonId));
+
+            return await _context.Quizzes
+                .AsNoTracking()
+                .FirstOrDefaultAsync(q => q.LessonId == lessonId);
+        }
 
         public async Task<StudentQuiz> GetStudentQuizAsync(Guid studentId, Guid quizId)
         {

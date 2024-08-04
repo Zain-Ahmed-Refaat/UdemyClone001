@@ -6,14 +6,12 @@ namespace UdemyClone.Models
     {
         public string Title { get; set; }
         public string Description { get; set; }
-        public Guid LessonId { get; set; }
         public List<CreateQuestionRequest> Questions { get; set; }
     }
 
     public class CreateQuestionRequest
     {
         public string Text { get; set; }
-        public Guid CorrectAnswerId { get; set; }
         public List<CreateAnswerRequest> Answers { get; set; }
     }
 

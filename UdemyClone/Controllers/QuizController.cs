@@ -45,18 +45,29 @@ namespace UdemyClone.Controllers
 
         [HttpPost("Create-Quiz")]
         [Authorize(Roles = "Instructor")]
-        public async Task<IActionResult> CreateQuiz([FromBody] CreateQuizRequest request)
+        public async Task<IActionResult> CreateQuiz(Guid LessonId, [FromBody] CreateQuizRequest request)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
             try
             {
-                await _quizService.CreateQuizAsync(request);
-                return CreatedAtAction(nameof(GetQuiz), new { quizId = request.LessonId }, request);
+                if (request == null)
+                    return BadRequest("Quiz model cannot be null.");
+
+                if (LessonId == Guid.Empty)
+                    return BadRequest("Lesson ID cannot be empty.");
+
+                await _quizService.CreateQuizAsync(request, LessonId);
+                return CreatedAtAction(nameof(GetQuiz), new { quizId = LessonId }, request);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Error creating quiz: {ex.Message}");
                 return StatusCode(500, "An error occurred while creating the quiz.");
             }
         }
@@ -152,21 +163,18 @@ namespace UdemyClone.Controllers
         {
             var instructorId = GetIdFromToken();
 
+            if (quizId == Guid.Empty)         
+                return BadRequest("Quiz ID cannot be empty.");
+            
             try
             {
                 var isOwner = await _quizService.IsInstructorOwnerOfQuizAsync(instructorId, quizId);
-
                 if (!isOwner)
-                {
                     return Unauthorized("You do not have permission to view this quiz.");
-                }
-
+                
                 var quizResults = await _quizService.GetQuizResultsByIdAsync(quizId);
-
-                if (quizResults == null || !quizResults.Any())
-                {
+                if (quizResults == null || !quizResults.Any())              
                     return NotFound("No results found for this quiz.");
-                }
 
                 return Ok(quizResults);
             }
@@ -176,7 +184,6 @@ namespace UdemyClone.Controllers
                 return StatusCode(500, "An error occurred while retrieving quiz results.");
             }
         }
-
 
         [HttpDelete("Delete-Quiz")]
         [Authorize(Roles = "Admin, Instructor")]

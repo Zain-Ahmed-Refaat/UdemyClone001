@@ -8,6 +8,7 @@ namespace UdemyClone.Services.IServices
         Task<StudentQuiz> GetStudentQuizAsync(Guid studentId, Guid quizId);
         Task AddStudentAnswerAsync(StudentAnswer studentAnswer);
         Task UpdateStudentQuizAsync(StudentQuiz studentQuiz);
+        Task<Quiz> GetQuizzesByLessonIdAsync(Guid lessonId);
         Task AddStudentQuizAsync(StudentQuiz studentQuiz);
         Task<Quiz> GetByIdAsync(Guid quizId);
         Task DeleteQuizAsync(Guid quizId);
