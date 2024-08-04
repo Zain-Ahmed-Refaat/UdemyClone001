@@ -35,6 +35,37 @@ namespace UdemyClone.Controllers
             }
         }
 
+        [HttpPut("Update-SubCategory")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateSubCategory([FromBody] SubCategoryUpdateDto updateDto)
+        {
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                var updatedSubCategory = await subCategoryService.UpdateSubCategoryAsync(updateDto);
+
+                if (updatedSubCategory == null)
+                {
+                    return NotFound("SubCategory not found.");
+                }
+
+                return Ok(updatedSubCategory);
+            }
+            catch (DbUpdateException dbEx)
+            {
+                return StatusCode(500, dbEx.InnerException?.Message ?? dbEx.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
         [HttpGet("Get-SubCategory-By-Id")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetSubCategoryById(Guid id)
@@ -70,37 +101,6 @@ namespace UdemyClone.Controllers
             catch (ArgumentException ex)
             {
                 return BadRequest(ex.Message);
-            }
-        }
-
-        [HttpPut("Update-SubCategory")]
-        [Authorize(Roles = "Admin")] 
-        public async Task<IActionResult> UpdateSubCategory([FromBody] SubCategoryUpdateDto updateDto)
-        {
-
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            try
-            {
-                var updatedSubCategory = await subCategoryService.UpdateSubCategoryAsync(updateDto);
-
-                if (updatedSubCategory == null)
-                {
-                    return NotFound("SubCategory not found.");
-                }
-
-                return Ok(updatedSubCategory);
-            }
-            catch (DbUpdateException dbEx)
-            {
-                return StatusCode(500, dbEx.InnerException?.Message ?? dbEx.Message);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ex.Message);
             }
         }
 

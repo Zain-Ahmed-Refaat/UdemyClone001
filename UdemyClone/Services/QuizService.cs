@@ -115,7 +115,9 @@ namespace UdemyClone.Services
         public async Task<bool> DidStudentPassQuizAsync(Guid studentId, Guid quizId)
         {
             var studentQuiz = await context.StudentQuizzes
-                .FirstOrDefaultAsync(sq => sq.StudentId == studentId && sq.QuizId == quizId);
+                                            .Where(sq => sq.StudentId == studentId && sq.QuizId == quizId)
+                                            .OrderByDescending(sq => sq.DateTaken)
+                                            .FirstOrDefaultAsync();
 
             return studentQuiz?.Passed ?? false;
         }

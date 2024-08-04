@@ -31,6 +31,25 @@ namespace UdemyClone.Controllers
             }
         }
 
+        [HttpPut("Update-Category")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateCategory(Guid categoryId, string newCategoryName)
+        {
+            try
+            {
+                var updatedCategory = await categoryService.UpdateCategoryAsync(categoryId, newCategoryName);
+                return Ok(updatedCategory);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return NotFound(ex.Message);
+            }
+        }
+
         [HttpGet("Get-Category-By-Id")]
         [Authorize]
         public async Task<IActionResult> GetCategoryById(Guid id)
@@ -56,24 +75,6 @@ namespace UdemyClone.Controllers
             }
         }
 
-        [HttpPut("Update-Category")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> UpdateCategory(Guid categoryId, string newCategoryName)
-        {
-            try
-            {
-                var updatedCategory = await categoryService.UpdateCategoryAsync(categoryId, newCategoryName);
-                return Ok(updatedCategory);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return NotFound(ex.Message);
-            }
-        }
 
         [HttpGet("Search-Categories")]
         public async Task<IActionResult> SearchCategories([FromQuery] string searchTerm)

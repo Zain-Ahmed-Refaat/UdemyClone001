@@ -19,30 +19,6 @@ namespace UdemyClone.Controllers
             _quizService = quizService;
         }
 
-        [HttpGet("View-Quiz")]
-        [Authorize(Roles = "Student")]
-        public async Task<IActionResult> GetQuiz(Guid lessonId)
-        {
-            var studentId = GetIdFromToken();
-
-            if (lessonId == Guid.Empty)
-                return BadRequest("Lesson ID cannot be empty.");
-
-
-                var quizId = await _quizService.GetQuizIdByLessonIdAsync(lessonId);
-
-                if (quizId == Guid.Empty)
-                    return BadRequest("Quiz ID is null or empty.");
-
-                var quiz = await _quizService.GetQuizByIdAsync(quizId, studentId);
-
-                if (quiz == null)
-                    return NotFound("Quiz not found.");
-
-                return Ok(quiz);
-
-        }
-
         [HttpPost("Create-Quiz")]
         [Authorize(Roles = "Instructor")]
         public async Task<IActionResult> CreateQuiz(Guid LessonId, [FromBody] CreateQuizRequest request)
@@ -138,6 +114,30 @@ namespace UdemyClone.Controllers
             {
                 return StatusCode(500, ex.Message);
             }
+        }
+
+        [HttpGet("View-Quiz")]
+        [Authorize(Roles = "Student")]
+        public async Task<IActionResult> GetQuiz(Guid lessonId)
+        {
+            var studentId = GetIdFromToken();
+
+            if (lessonId == Guid.Empty)
+                return BadRequest("Lesson ID cannot be empty.");
+
+
+            var quizId = await _quizService.GetQuizIdByLessonIdAsync(lessonId);
+
+            if (quizId == Guid.Empty)
+                return BadRequest("Quiz ID is null or empty.");
+
+            var quiz = await _quizService.GetQuizByIdAsync(quizId, studentId);
+
+            if (quiz == null)
+                return NotFound("Quiz not found.");
+
+            return Ok(quiz);
+
         }
 
         [HttpGet("View-Quiz-Result-Student")]

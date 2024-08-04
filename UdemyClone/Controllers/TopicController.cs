@@ -35,6 +35,36 @@ namespace UdemyClone.Controllers
             }
         }
 
+        [HttpPut("Update-Topic")]
+        [Authorize(Roles = "Admin, Instructor")]
+        public async Task<IActionResult> UpdateTopic([FromBody] UpdateTopicDto updateTopicDto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                var updatedTopic = await topicService.UpdateTopicAsync(updateTopicDto);
+
+                if (updatedTopic == null)
+                {
+                    return NotFound("Topic not found.");
+                }
+
+                return Ok(updatedTopic);
+            }
+            catch (DbUpdateException dbEx)
+            {
+                return StatusCode(500, dbEx.InnerException?.Message ?? dbEx.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
         [HttpGet("Get-Topic-By-Id")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetTopicById(Guid id)
@@ -70,36 +100,6 @@ namespace UdemyClone.Controllers
             catch (ArgumentException ex)
             {
                 return BadRequest(ex.Message);
-            }
-        }
-
-        [HttpPut("Update-Topic")]
-        [Authorize(Roles = "Admin, Instructor")]
-        public async Task<IActionResult> UpdateTopic([FromBody] UpdateTopicDto updateTopicDto)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            try
-            {
-                var updatedTopic = await topicService.UpdateTopicAsync(updateTopicDto);
-
-                if (updatedTopic == null)
-                {
-                    return NotFound("Topic not found.");
-                }
-
-                return Ok(updatedTopic);
-            }
-            catch (DbUpdateException dbEx)
-            {
-                return StatusCode(500, dbEx.InnerException?.Message ?? dbEx.Message);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ex.Message);
             }
         }
 
