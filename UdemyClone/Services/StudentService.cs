@@ -24,7 +24,6 @@ namespace UdemyClone.Services
                 .Include(sc => sc.Student)
                 .Select(sc => new StudentDto
                 {
-                    Id = sc.Student.Id,
                     UserName = sc.Student.UserName,
                     Email = sc.Student.Email
                 })
@@ -220,10 +219,10 @@ namespace UdemyClone.Services
             await context.SaveChangesAsync();
         }
 
-        public async Task<string> UnenrollCourseAsync(Guid userId, string courseName)
+        public async Task<string> UnenrollCourseAsync(Guid userId, Guid CourseId)
         {
             var course = await context.Courses
-                .FirstOrDefaultAsync(c => c.Name == courseName);
+                .FirstOrDefaultAsync(c => c.Id == CourseId);
 
             if (course == null)
                 return "Course not found.";

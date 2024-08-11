@@ -116,14 +116,14 @@ namespace UdemyClone.Controllers
 
         [HttpPost("UnEnroll-Course")]
         [Authorize(Roles = "Student")]
-        public async Task<IActionResult> UnenrollCourse(string courseName)
+        public async Task<IActionResult> UnenrollCourse(Guid CourseId)
         {
             var userId = GetIdFromToken();
 
             if (userId == Guid.Empty)
                 return Unauthorized("User is not authenticated.");
 
-            var result = await studentService.UnenrollCourseAsync(userId, courseName);
+            var result = await studentService.UnenrollCourseAsync(userId, CourseId);
 
             return result == "Successfully unenrolled from the course."
                 ? Ok(result)

@@ -10,7 +10,7 @@ namespace UdemyClone.Services.IServices
         Task<dynamic> SearchCoursesAsync(string keyword, int pageNumber, int pageSize);
         Task<IEnumerable<StudentDto>> GetCourseEnrollmentsAsync(Guid courseId);
         Task<IEnumerable<CourseDto>> GetCoursesByStudentAsync(Guid studentId);
-        Task<string> UnenrollCourseAsync(Guid userId, string courseName);
+        Task<string> UnenrollCourseAsync(Guid userId, Guid CourseId);
         Task<LessonModel> GetLessonAsync(Guid studentId, Guid lessonId);
         Task<StudentDto> GetStudentByIdAsync(Guid studentId);
         Task EnrollCourseAsync(Guid courseId, Guid userId);

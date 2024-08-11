@@ -280,41 +280,46 @@ namespace UdemyClone.Services
 
         public async Task<string> SubmitQuizAsync(Guid quizId, SubmitQuizRequest request, Guid studentId)
         {
-            
-            switch (request)
-            {
-                case null:
-                    throw new ArgumentNullException(nameof(request), "SubmitQuizRequest cannot be null.");
-                case { Answers: null or { Count: 0 } }:
-                    throw new ArgumentException("At least one answer must be provided.", nameof(request.Answers));
-            }
+            if (request is null)
+                throw new ArgumentNullException(nameof(request), "SubmitQuizRequest cannot be null.");
+
+            if (request.Answers is null || request.Answers.Count == 0)
+                throw new ArgumentException("At least one answer must be provided.", nameof(request.Answers));
 
             var quiz = await _quizRepository.GetByIdAsync(quizId);
+            if (quiz is null)
+                throw new NotFoundException("Quiz not found.");
 
-            switch (quiz)
-            {
-                case null:
-                    throw new NotFoundException("Quiz not found.");
-                case { Lesson.CourseId: { } } when quiz.Lesson.CourseId == Guid.Empty:
-                    throw new ArgumentException("Course ID cannot be empty.", nameof(quiz.Lesson.CourseId));
-            }
+            if (quiz.Lesson.CourseId == Guid.Empty)
+                throw new ArgumentException("Course ID cannot be empty.", nameof(quiz.Lesson.CourseId));
 
             bool isEnrolled = await IsStudentEnrolledInCourseAsync(studentId, quiz.Lesson.CourseId);
-
-            switch (isEnrolled)
-            {
-                case false:
-                    throw new UnauthorizedAccessException("You are not enrolled in the course associated with this quiz.");
-            }
+            if (!isEnrolled)
+                throw new UnauthorizedAccessException("You are not enrolled in the course associated with this quiz.");
 
             var lastAttempt = await _quizRepository.GetLatestStudentQuizAttemptAsync(studentId, quizId);
-
-            switch (lastAttempt)
+            if (lastAttempt is not null)
             {
-                case { Passed: true }:
+                if (lastAttempt.Passed)
                     throw new InvalidOperationException("You have already passed this quiz. No need to retake.");
-                case { Passed: false }:
+
+                if (!lastAttempt.Passed)
                     throw new InvalidOperationException("You have failed this quiz before. Contact your instructor to retake the quiz.");
+            }
+
+            int correctAnswers = 0;
+
+            foreach (var answer in request.Answers)
+            {
+                var question = quiz.Questions.FirstOrDefault(q => q.Id == answer.QuestionId);
+                if (question is null)
+                    throw new InvalidOperationException($"Question with ID {answer.QuestionId} not found.");
+
+                if (question.Answers is null || !question.Answers.Any(a => a.Id == answer.AnswerId))
+                    throw new ArgumentException($"Invalid Answer ID {answer.AnswerId} for Question {answer.QuestionId}.");
+
+                if (question.CorrectAnswerId == answer.AnswerId)
+                    correctAnswers++;
             }
 
             var studentQuiz = new StudentQuiz
@@ -323,27 +328,14 @@ namespace UdemyClone.Services
                 StudentId = studentId,
                 QuizId = quizId,
                 DateTaken = DateTime.UtcNow,
-                Score = 0,
-                Passed = false
+                Score = (correctAnswers * 100) / quiz.Questions.Count,
+                Passed = correctAnswers >= Math.Ceiling(quiz.Questions.Count * 0.7)
             };
 
             await _quizRepository.AddStudentQuizAsync(studentQuiz);
 
-            int correctAnswers = 0;
-
             foreach (var answer in request.Answers)
             {
-                var question = quiz.Questions.FirstOrDefault(q => q.Id == answer.QuestionId);
-                switch (question)
-                {
-                    case null:
-                        throw new InvalidOperationException($"Question with ID {answer.QuestionId} not found.");
-                    case { Answers: { } answers } when !answers.Select(a => a.Id).Contains(answer.AnswerId):
-                        throw new ArgumentException($"Invalid Answer ID {answer.AnswerId} for Question {answer.QuestionId}.");
-                }
-
-                var isCorrect = question.CorrectAnswerId == answer.AnswerId;
-
                 var studentAnswer = new StudentAnswer
                 {
                     Id = Guid.NewGuid(),
@@ -353,18 +345,13 @@ namespace UdemyClone.Services
                 };
 
                 await _quizRepository.AddStudentAnswerAsync(studentAnswer);
-
-                if (isCorrect)
-                    correctAnswers++;
             }
-
-            studentQuiz.Score = (correctAnswers * 100) / quiz.Questions.Count;
-            studentQuiz.Passed = correctAnswers >= Math.Ceiling(quiz.Questions.Count * 0.7);
 
             await _quizRepository.UpdateStudentQuizAsync(studentQuiz);
 
             return "Quiz Submitted Successfully\n Check Your Results!";
         }
+
 
         public async Task<QuizResultDto> GetQuizResultAsync(Guid quizId, Guid studentId)
         {
