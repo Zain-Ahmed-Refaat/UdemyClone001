@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using UdemyClone.Dto;
+using UdemyClone.Entities;
 using UdemyClone.Services.IServices;
 
 namespace UdemyClone.Controllers
@@ -10,9 +11,9 @@ namespace UdemyClone.Controllers
     [ApiController]
     public class SubCategoryController : ControllerBase
     {
-        private readonly ISubCategoryService subCategoryService;
+        private readonly IBaseRepository<SubCategory> subCategoryService;
 
-        public SubCategoryController(ISubCategoryService subCategoryService)
+        public SubCategoryController(IBaseRepository<SubCategory> subCategoryService)
         {
             this.subCategoryService = subCategoryService;
         }
@@ -26,7 +27,14 @@ namespace UdemyClone.Controllers
 
             try
             {
-                var subCategory = await subCategoryService.CreateSubCategoryAsync(dto.Name, dto.CategoryId);
+                var subCategory = new SubCategory
+                {
+                    Id = Guid.NewGuid(),
+                    Name = dto.Name,
+                    CategoryId = dto.CategoryId
+                };
+
+                await subCategoryService.CreateAsync(subCategory);
                 return CreatedAtAction(nameof(GetSubCategoryById), new { id = subCategory.Id }, subCategory);
             }
             catch (ArgumentException ex)
@@ -39,30 +47,30 @@ namespace UdemyClone.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateSubCategory([FromBody] SubCategoryUpdateDto updateDto)
         {
-
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            if (updateDto == null || updateDto.Id == Guid.Empty || string.IsNullOrWhiteSpace(updateDto.Name))
+                return BadRequest("Invalid data.");
 
             try
             {
-                var updatedSubCategory = await subCategoryService.UpdateSubCategoryAsync(updateDto);
-
-                if (updatedSubCategory == null)
+                var subCategory = await subCategoryService.GetByIdAsync(updateDto.Id);
+                if (subCategory == null)
                 {
                     return NotFound("SubCategory not found.");
                 }
 
-                return Ok(updatedSubCategory);
+                subCategory.Name = updateDto.Name;
+                subCategory.CategoryId = updateDto.CategoryId;
+
+                await subCategoryService.UpdateAsync(subCategory);
+                return Ok(subCategory);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
             }
             catch (DbUpdateException dbEx)
             {
                 return StatusCode(500, dbEx.InnerException?.Message ?? dbEx.Message);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ex.Message);
             }
         }
 
@@ -75,7 +83,7 @@ namespace UdemyClone.Controllers
 
             try
             {
-                var subCategory = await subCategoryService.GetSubCategoryByIdAsync(id);
+                var subCategory = await subCategoryService.GetByIdAsync(id);
                 if (subCategory == null)
                     return NotFound("SubCategory not found.");
 
@@ -95,8 +103,13 @@ namespace UdemyClone.Controllers
 
             try
             {
-                var subCategories = await subCategoryService.GetAllSubCategoriesAsync(pageNumber, pageSize);
-                return Ok(subCategories);
+                var subCategories = await subCategoryService.GetAllAsync();
+                var pagedResult = subCategories
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+                return Ok(pagedResult);
             }
             catch (ArgumentException ex)
             {
@@ -112,7 +125,7 @@ namespace UdemyClone.Controllers
 
             try
             {
-                var subCategories = await subCategoryService.SearchSubCategoriesAsync(searchTerm);
+                var subCategories = await subCategoryService.SearchAsync(searchTerm);
                 return Ok(subCategories);
             }
             catch (ArgumentException ex)
@@ -130,8 +143,15 @@ namespace UdemyClone.Controllers
 
             try
             {
-                var result = await subCategoryService.DeleteSubCategoryAsync(id);
-                return NoContent();
+                var subCategory = await subCategoryService.GetByIdAsync(id);
+                if (subCategory == null)
+                    return NotFound("SubCategory not found.");
+
+                var result = await subCategoryService.DeleteAsync(subCategory);
+                if (result)
+                    return NoContent();
+                else
+                    return BadRequest("Failed to delete SubCategory.");
             }
             catch (ArgumentException ex)
             {
@@ -142,6 +162,5 @@ namespace UdemyClone.Controllers
                 return NotFound(ex.Message);
             }
         }
-
     }
 }

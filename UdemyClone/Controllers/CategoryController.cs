@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using UdemyClone.Entities;
 using UdemyClone.Services.IServices;
 
 namespace UdemyClone.Controllers
@@ -8,13 +9,12 @@ namespace UdemyClone.Controllers
     [ApiController]
     public class CategoryController : ControllerBase
     {
-        private readonly ICategoryService categoryService;
+        private readonly IBaseRepository<Category> categoryService;
 
-        public CategoryController(ICategoryService categoryService) 
+        public CategoryController(IBaseRepository<Category> categoryService)
         {
             this.categoryService = categoryService;
         }
-
 
         [HttpPost("Create-Category")]
         [Authorize(Roles = "Admin")]
@@ -22,8 +22,9 @@ namespace UdemyClone.Controllers
         {
             try
             {
-                var category = await categoryService.CreateCategoryAsync(categoryName);
-                return CreatedAtAction(nameof(GetCategoryById), new { id = category.Id }, category);
+                var category = new Category { Name = categoryName };
+                var createdCategory = await categoryService.CreateAsync(category);
+                return CreatedAtAction(nameof(GetCategoryById), new { id = createdCategory.Id }, createdCategory);
             }
             catch (ArgumentException ex)
             {
@@ -37,16 +38,17 @@ namespace UdemyClone.Controllers
         {
             try
             {
-                var updatedCategory = await categoryService.UpdateCategoryAsync(categoryId, newCategoryName);
+                var category = await categoryService.GetByIdAsync(categoryId);
+                if (category == null)
+                    return NotFound("Category not found.");
+
+                category.Name = newCategoryName;
+                var updatedCategory = await categoryService.UpdateAsync(category);
                 return Ok(updatedCategory);
             }
             catch (ArgumentException ex)
             {
                 return BadRequest(ex.Message);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return NotFound(ex.Message);
             }
         }
 
@@ -54,7 +56,7 @@ namespace UdemyClone.Controllers
         [Authorize]
         public async Task<IActionResult> GetCategoryById(Guid id)
         {
-            var category = await categoryService.GetCategoryByIdAsync(id);
+            var category = await categoryService.GetByIdAsync(id);
             if (category == null)
                 return NotFound();
 
@@ -66,8 +68,9 @@ namespace UdemyClone.Controllers
         {
             try
             {
-                var categories = await categoryService.GetAllCategoriesAsync(pageNumber, pageSize);
-                return Ok(categories);
+                var categories = await categoryService.GetAllAsync();
+                var pagedCategories = categories.Skip((pageNumber - 1) * pageSize).Take(pageSize);
+                return Ok(pagedCategories);
             }
             catch (ArgumentException ex)
             {
@@ -75,13 +78,12 @@ namespace UdemyClone.Controllers
             }
         }
 
-
         [HttpGet("Search-Categories")]
         public async Task<IActionResult> SearchCategories([FromQuery] string searchTerm)
         {
             try
             {
-                var categories = await categoryService.SearchCategoriesAsync(searchTerm);
+                var categories = await categoryService.SearchAsync(searchTerm);
                 return Ok(categories);
             }
             catch (Exception ex)
@@ -96,18 +98,17 @@ namespace UdemyClone.Controllers
         {
             try
             {
-                var result = await categoryService.DeleteCategoryAsync(categoryId);
+                var category = await categoryService.GetByIdAsync(categoryId);
+                if (category == null)
+                    return NotFound("Category not found.");
+
+                var result = await categoryService.DeleteAsync(category);
                 return result ? Ok("Category successfully deleted.") : BadRequest("Failed to delete category.");
             }
             catch (ArgumentException ex)
             {
                 return BadRequest(ex.Message);
             }
-            catch (InvalidOperationException ex)
-            {
-                return NotFound(ex.Message);
-            }
         }
-
     }
 }

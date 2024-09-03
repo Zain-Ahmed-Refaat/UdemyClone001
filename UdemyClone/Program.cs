@@ -23,15 +23,15 @@ builder.Services.AddIdentity<User, IdentityRole<Guid>>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
+builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
+
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITopicService, TopicService>();
 builder.Services.AddScoped<ICourseService, CourseService>();
 builder.Services.AddScoped<IStudentService, StudentService>();
 builder.Services.AddScoped<IQuizService, QuizService>();
 builder.Services.AddScoped<IQuizRepository, QuizRepository>();
-builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IInstructorService, InstructorService>();
-builder.Services.AddScoped<ISubCategoryService, SubCategoryService>();
 
 builder.Services.AddAuthentication(options =>
 {
